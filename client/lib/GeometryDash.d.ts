@@ -7,6 +7,7 @@ class GeometryDash {
 	public parse(data: string, splitter?: string): any;
 	public xorDecrypt(text: string, key: 26364): string;
 	public static Level: typeof Level;
+	public static ExtendedLevel: typeof ExtendedLevel;
 	public static User: typeof User;
 }
 
@@ -34,7 +35,6 @@ class Level {
 	public gd: GeometryDash;
 	public name: string;
 	public creatorName: string;
-	public password: string;
 	public coins: string;
 	public song: string;
 	public songObj: Song;
@@ -45,16 +45,21 @@ class Level {
 	public starRate: string;
 	public version: string;
 	public gameVersion: string;
-	public uploaded: string;
-	public updated: string;
 	public original?: string;
 	public difficultyFace: string;
 	public async init(): Promise<Level>;
-	public getEmbed(): MessageEmbed;
 	public static async getDailyEmbed(gd: GeometryDash): Promise<MessageEmbed>
 	public static async getWeeklyEmbed(gd: GeometryDash): Promise<MessageEmbed>
 	public static async getSearchResults(query: string, gd: GeometryDash, page: number): Promise<Results>;
 	public static async getLevelsByUser(query: string, gd: GeometryDash, page: number): Promise<Results>;
+}
+
+class ExtendedLevel extends Level {
+	public constructor(id: string, gd: GeometryDash): Promise<ExtendedLevel>
+	public password: string;
+	public uploaded: string;
+	public updated: string;
+	public getEmbed(): MessageEmbed;
 }
 
 class User {

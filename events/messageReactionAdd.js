@@ -13,14 +13,12 @@ module.exports = new GDEvent({
 				let page = +(reaction.message.embeds[0].description.split(" ")[1]) - 2;
 				let query = reaction.message.embeds[0].title.split(": ").slice(1).join(" ");
 
-				let waitMsg = await reaction.message.channel.send("Please wait...");
-				reaction.message.edit((await Level.getSearchResults(query, client.gd, page)).embed).then(() => waitMsg.delete());
+				reaction.message.edit((await Level.getSearchResults(query, client.gd, page)).embed);
 			} else {
 				let page = +(reaction.message.embeds[0].description.split(" ")[1]) - 2;
 				let query = reaction.message.embeds[0].title.split(": ").slice(1).join(" ");
 
-				let waitMsg = await reaction.message.channel.send("Please wait...");
-				reaction.message.edit((await Level.getLevelsByUser(query, client.gd, page)).embed).then(() => waitMsg.delete());
+				reaction.message.edit((await Level.getLevelsByUser(query, client.gd, page)).embed);
 			}
 		}
 		if (reaction.emoji.toString() == "▶") {
@@ -28,14 +26,12 @@ module.exports = new GDEvent({
 				let page = +(reaction.message.embeds[0].description.split(" ")[1]);
 				let query = reaction.message.embeds[0].title.split(": ").slice(1).join(" ");
 
-				let waitMsg = await reaction.message.channel.send("Please wait...");
-				reaction.message.edit((await Level.getSearchResults(query, client.gd, page)).embed).then(() => waitMsg.delete());
+				reaction.message.edit((await Level.getSearchResults(query, client.gd, page)).embed);
 			} else {
 				let page = +(reaction.message.embeds[0].description.split(" ")[1]);
 				let query = reaction.message.embeds[0].title.split(": ").slice(1).join(" ");
 
-				let waitMsg = await reaction.message.channel.send("Please wait...");
-				reaction.message.edit((await Level.getLevelsByUser(query, client.gd, page)).embed).then(() => waitMsg.delete());
+				reaction.message.edit((await Level.getLevelsByUser(query, client.gd, page)).embed);
 			}
 		}
 	}

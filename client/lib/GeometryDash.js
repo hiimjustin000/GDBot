@@ -1,5 +1,4 @@
 const { MessageEmbed } = require("discord.js");
-const { parse } = require("flatted");
 const { default: fetch } = require("node-fetch");
 const difficulties = require("../../db/difficulties.json");
 const songs = require("../../db/songs.json");
@@ -55,25 +54,15 @@ class Level {
 			str: this.id,
 			type: 0
 		});
-		let fullData = this.gd.parse(await this.gd.getData("downloadGJLevel22", {
-			levelID: this.id
-		}));
 
 		let level = this.gd.parse(levelData.split("#")[0]);
 		let author = levelData.split("#")[1].split(":");
 		let song = `~${levelData.split("#")[2]}`;
 		song = this.gd.parse(song, "~|~");
 
-		level[27] = fullData[27];
-		level[28] = fullData[28];
-		level[29] = fullData[29];
-
 		this.name = level[2];
 		this.creatorName = author[1] || "-";
 		this.description = Buffer.from(level[3], "base64").toString() || "None";
-		this.password = "No copy";
-		this.password = level[27] == "Aw==" ? "Free copy" : this.gd.xorDecrypt(level[27], 26364).slice(1);
-		this.password = level[27] == "0" ? "No copy" : this.password;
 		this.coins = level[37];
 		this.coins = `${this.coins}, ${level[38] > 0 ? "Silver" : "Bronze"}`;
 		if (this.coins.startsWith("0")) this.coins = "0";
@@ -97,10 +86,158 @@ class Level {
 		this.starRate = level[18] > 0 ? "Yes" : "No";
 		this.version = level[5];
 		this.gameVersion = level[13] > 17 ? (level[13] / 10).toFixed(1) : level[13] == 11 ? "1.8" : level[13] == 10 ? "1.7" : "<1.7";
-		this.uploaded = `${level[28]} ago`;
-		this.updated = `${level[29]} ago`;
 		if (level[30] != "0") this.original = level[30];
 		this.difficultyFace = this._getDifficultyFace(level);
+
+		return this;
+	}
+
+	static async getDailyEmbed(gd) {
+		let id = gd.parse(await gd.getData("downloadGJLevel22", {
+			levelID: -1
+		}))[1];
+
+		return (await new ExtendedLevel(id, gd).init()).getEmbed();
+	}
+
+	static async getWeeklyEmbed(gd) {
+		let id = gd.parse(await gd.getData("downloadGJLevel22", {
+			levelID: -2
+		}))[1];
+
+		return (await new ExtendedLevel(id, gd).init()).getEmbed();
+	}
+
+	static async getSearchResults(query, gd, page = 0) {
+		let embed = new MessageEmbed({
+			title: `Search results: ${query}`,
+			description: `Page ${page + 1}`,
+			color: Math.floor(Math.random() * (0xFFFFFF + 1)),
+			timestamp: new Date(),
+			footer: {
+				text: env.FOOTER
+			}
+		});
+
+		let results = await gd.getData("getGJLevels21", {
+			str: query,
+			type: 0,
+			page
+		});
+		if (!results || results == "-1") return;
+		results = results.split("#")[0].split("|", 10);
+
+		if (results.length == 1) return {
+			embed: (await new ExtendedLevel(gd.parse(results[0])[1], gd).init()).getEmbed(),
+		}
+		
+		let ids = [];
+		
+		for (let i = 0; i < 10; i++) {
+			let level = new Level(gd.parse(results[i])[1], gd);
+			await level.init();
+			embed.addField(`${level.name} by ${level.creatorName}`, `Downloads: ${level.downloads}\nLikes: ${level.likes}\nLength: ${level.length}\nSong: ${level.songObj.name} by ${level.songObj.author}`);
+
+			ids.push(level.id);
+		}
+
+		embed.addField(`Page ${page + 1}/1000`, "Use `select (number)` to select level");
+
+		return {
+			embed,
+			page,
+			ids
+		}
+	}
+
+	static async getLevelsByUser(query, gd, page = 0) {
+		let user = new User(query, gd);
+		await user.init();
+
+		let embed = new MessageEmbed({
+			title: `Levels by: ${user.username}`,
+			description: `Page ${page + 1}`,
+			color: Math.floor(Math.random() * (0xFFFFFF + 1)),
+			timestamp: new Date(),
+			footer: {
+				text: env.FOOTER
+			}
+		});
+
+		let results = await gd.getData("getGJLevels21", {
+			str: user.id,
+			type: 5,
+			page
+		});
+		if (!results || results == "-1") return {
+			embed: embed.addField("No results found", "No results found"),
+			page
+		}
+		results = results.split("#")[0].split("|");
+
+		let ids = [];
+		
+		for (let i = 0; i < results.length; i++) {
+			let level = new Level(gd.parse(results[i])[1], gd);
+			await level.init();
+			embed.addField(`${level.name}`, `Downloads: ${level.downloads}\nLikes: ${level.likes}\nLength: ${level.length}\nSong: ${level.songObj.name} by ${level.songObj.author}`);
+
+			ids.push(level.id);
+		}
+
+		embed.addField(`Page ${page + 1}`, "Use `select (number)` to select level");
+
+		return {
+			embed,
+			page,
+			ids
+		}
+	}
+
+	_getDifficultyFace(levelData) {
+		let levelDifficulty = difficulty[levelData[9]];
+		
+		if (levelData[17] > 0) levelDifficulty = `${levelDifficulty} demon`;
+		else if (levelData[25] > 0) levelDifficulty = "auto";
+
+		if (levelDifficulty == "insane demon") levelDifficulty = "extreme demon";
+		if (levelDifficulty == "harder demon") levelDifficulty = "insane demon";
+		if (levelDifficulty == "normal demon") levelDifficulty = "medium demon";
+
+		let levelAward = "default";
+		if (levelData[19] > 0) levelAward = "feature";
+		if (levelData[42] > 0) levelAward = "epic";
+
+		let diff = levelDifficulty;
+		diff = diff.toLowerCase();
+
+		if (diff.includes(" ")) {
+			let diffArray = diff.split(" ");
+			diff = difficulties[levelAward][diffArray[1]][diffArray[0]];
+		} else diff = difficulties[levelAward][diff];
+
+		return diff;
+	}
+}
+
+class ExtendedLevel extends Level {
+	constructor(id, gd) {
+		this.id = id;
+		this.gd = gd;
+	}
+
+	async init() {
+		await super.init();
+
+		let fullData = this.gd.parse(await this.gd.getData("downloadGJLevel22", {
+			levelID: this.id
+		}));
+
+		this.password = "No copy";
+		this.password = fullData[27] == "Aw==" ? "Free copy" : this.gd.xorDecrypt(fullData[27], 26364).slice(1);
+		this.password = fullData[27] == "0" ? "No copy" : this.password;
+		this.uploaded = `${fullData[28]} ago`;
+		this.updated = `${fullData[29]} ago`;
 
 		return this;
 	}
@@ -165,133 +302,6 @@ class Level {
 		if (this.objects > 40000) embed.addField("Over 40k objects", "May lag on low-end devices");
 
 		return embed;
-	}
-
-	static async getDailyEmbed(gd) {
-		let id = gd.parse(await gd.getData("downloadGJLevel22", {
-			levelID: -1
-		}))[1];
-
-		return (await new Level(id, gd).init()).getEmbed();
-	}
-
-	static async getWeeklyEmbed(gd) {
-		let id = gd.parse(await gd.getData("downloadGJLevel22", {
-			levelID: -2
-		}))[1];
-
-		return (await new Level(id, gd).init()).getEmbed();
-	}
-
-	static async getSearchResults(query, gd, page = 0) {
-		let embed = new MessageEmbed({
-			title: `Search results: ${query}`,
-			description: `Page ${page + 1}`,
-			color: Math.floor(Math.random() * (0xFFFFFF + 1)),
-			timestamp: new Date(),
-			footer: {
-				text: env.FOOTER
-			}
-		});
-
-		let results = await gd.getData("getGJLevels21", {
-			str: query,
-			type: 0,
-			page
-		});
-		if (!results || results == "-1") return;
-		results = results.split("#")[0].split("|", 10);
-
-		if (results.length == 1) return {
-			embed: (await new Level(gd.parse(results[0])[1], gd).init()).getEmbed(),
-		}
-		
-		let ids = [];
-		
-		for (let i = 0; i < 10; i++) {
-			let level = new Level(gd.parse(results[i])[1], gd);
-			await level.init();
-			embed.addField(`${level.name} by ${level.creatorName}`, `Downloads: ${level.downloads}\nLikes: ${level.likes}\nLength: ${level.length}\nSong: ${level.songObj.name} by ${level.songObj.author}`);
-
-			ids.push(level.id);
-		}
-
-		embed.addField(`Page ${page + 1}/1000`, "Use `select (number)` to select level");
-
-		return {
-			embed,
-			page,
-			ids
-		}
-	}
-
-	static async getLevelsByUser(query, gd, page = 0) {
-		let user = new User(query, gd);
-		await user.init();
-
-		let embed = new MessageEmbed({
-			title: `Levels by: ${user.username}`,
-			description: `Page ${page + 1}`,
-			color: Math.floor(Math.random() * (0xFFFFFF + 1)),
-			timestamp: new Date(),
-			footer: {
-				text: env.FOOTER
-			}
-		});
-
-		let results = await gd.getData("getGJLevels21", {
-			str: user.id,
-			type: 5,
-			page
-		});
-		if (!results || results == "-1") return {
-			embed: embed.addField("No results found", "No results found"),
-			page
-		}
-		results = results.split("#")[0].split("|");
-
-		let ids = [];
-		
-		for (let i = 0; i < results.length; i++) {
-			let level = new Level(gd.parse(results[i])[1], gd);
-			await level.init();
-			embed.addField(`${level.name}`, `Downloads: ${level.downloads}\nLikes: ${level.likes}\nLength: ${level.length}\nSong: ${level.songObj.name} by ${level.songObj.author}`);
-
-			ids.push(level.id);
-		}
-
-		embed.addField(`Page ${page + 1}/1000`, "Use `select (number)` to select level");
-
-		return {
-			embed,
-			page,
-			ids
-		}
-	}
-
-	_getDifficultyFace(levelData) {
-		let levelDifficulty = difficulty[levelData[9]];
-		
-		if (levelData[17] > 0) levelDifficulty = `${levelDifficulty} demon`;
-		else if (levelData[25] > 0) levelDifficulty = "auto";
-
-		if (levelDifficulty == "insane demon") levelDifficulty = "extreme demon";
-		if (levelDifficulty == "harder demon") levelDifficulty = "insane demon";
-		if (levelDifficulty == "normal demon") levelDifficulty = "medium demon";
-
-		let levelAward = "default";
-		if (levelData[19] > 0) levelAward = "feature";
-		if (levelData[42] > 0) levelAward = "epic";
-
-		let diff = levelDifficulty;
-		diff = diff.toLowerCase();
-
-		if (diff.includes(" ")) {
-			let diffArray = diff.split(" ");
-			diff = difficulties[levelAward][diffArray[1]][diffArray[0]];
-		} else diff = difficulties[levelAward][diff];
-
-		return diff;
 	}
 }
 
@@ -376,6 +386,7 @@ class GeometryDash {
 	}
 	
 	static Level = Level;
+	static ExtendedLevel = ExtendedLevel;
 	static User = User;
 
 	async getData(file, params) {

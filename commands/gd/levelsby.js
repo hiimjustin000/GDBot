@@ -1,5 +1,5 @@
 const { GDCommand } = require("../../client");
-const { Level } = require("../../client/lib/GeometryDash");
+const { Level, ExtendedLevel } = require("../../client/lib/GeometryDash");
 
 module.exports = new GDCommand({
 	name: "levelsby",
@@ -9,12 +9,9 @@ module.exports = new GDCommand({
 	async execute(client, message, args) {
 		if (!args[0]) return message.channel.send("Please specify a username or player ID.");
 
-		let waitMsg = await message.channel.send("This may take a while...");
-
 		let results = await Level.getLevelsByUser(args.join(" "), client.gd);
 
 		message.channel.send(results.embed).then(msg => {
-			waitMsg.delete();
 			msg.react("◀").then(() => msg.react("▶"));
 
 			let collector = msg.channel.createMessageCollector(m => !isNaN(m.content.split(" ")[1]) && m.content.startsWith("select "), { time: 30000 });
@@ -22,7 +19,7 @@ module.exports = new GDCommand({
 			collector.on("collect", async m => {
 				if (m.author != message.author) return;
 
-				m.channel.send((await new Level(results.ids[m.content.split(" ")[1] - 1], client.gd).init()).getEmbed());
+				m.channel.send((await new ExtendedLevel(results.ids[m.content.split(" ")[1] - 1], client.gd).init()).getEmbed());
 			});
 		});
 	}
