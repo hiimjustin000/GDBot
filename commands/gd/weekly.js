@@ -7,7 +7,7 @@ module.exports = new GDCommand({
 	aliases: ["weeklydemon"],
 	usage: "weekly",
 	examples: ["weekly"],
-	async execute(client, message) {
+	execute(client, message) {
 		message.channel.send(Level.getWeeklyEmbed(client.gd));
 	}
 });

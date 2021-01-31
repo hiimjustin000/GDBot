@@ -141,7 +141,7 @@ class Level {
 			}
 		}
 
-		embed.addField(`Page ${page + 1}`, "Use `select (number)` to select level");
+		embed.addField(`Page ${page + 1}`, "Use `select (number)` to select a level\nUse `page (number)` to select a page\nUse `cancel` to cancel");
 
 		return {
 			embed,
@@ -181,11 +181,10 @@ class Level {
 			ids.push(level.id);
 		}
 
-		embed.addField(`Page ${page + 1}`, "Use `select (number)` to select level");
+		embed.addField(`Page ${page + 1}`, "Use `select (number)` to select a level\nUse `page (number) to select a page\nUse `cancel` to cancel");
 
 		return {
 			embed,
-			page,
 			ids
 		}
 	}
@@ -225,7 +224,7 @@ class ExtendedLevel extends Level {
 		}));
 
 		this.password = "No copy";
-		this.password = fullData[27] == "Aw==" ? "Free copy" : gd.xorDecrypt(fullData[27], 26364).slice(1);
+		this.password = fullData[27] == "Aw==" ? "Free copy" : gd.levelPassword(fullData[27]).slice(1);
 		this.password = fullData[27] == "0" ? "No copy" : this.password;
 		this.uploaded = `${fullData[28]} ago`;
 		this.updated = `${fullData[29]} ago`;
@@ -377,7 +376,7 @@ class GeometryDash {
 	getData(file, params) {
 		return fetch(`http://${this.endpoint}/${file}.php`, {
 			method: "POST",
-			form: new URLSearchParams({
+			body: new URLSearchParams({
 				...params,
 				secret: "Wmfd2893gb7",
 				gameVersion: "21",
@@ -399,12 +398,12 @@ class GeometryDash {
 		return res;
 	}
 
-	xorDecrypt(text, key) {
+	levelPassword(text) {
 		function xor(t, k) {
 			return String.fromCodePoint(...t.split("").map((char, index) => char.charCodeAt(0) ^ k.toString().charCodeAt(index % k.toString().length)));
 		}
 
-		return xor(Buffer.from(text.replace(/\//g, "_").replace(/\+/g, "-"), "base64").toString(), key);
+		return xor(Buffer.from(text.replace(/\//g, "_").replace(/\+/g, "-"), "base64").toString(), 26364);
 	}
 }
 

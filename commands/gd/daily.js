@@ -7,7 +7,7 @@ module.exports = new GDCommand({
 	aliases: ["dailylevel"],
 	usage: "daily",
 	examples: ["daily"],
-	async execute(client, message) {
+	execute(client, message) {
 		message.channel.send(Level.getDailyEmbed(client.gd));
 	}
 });

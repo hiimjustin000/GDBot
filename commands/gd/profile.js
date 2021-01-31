@@ -7,11 +7,10 @@ module.exports = new GDCommand({
 	aliases: ["user"],
 	usage: "profile (id/name)",
 	examples: ["profile RobTop", "profile 16"],
-	async execute(client, message, args) {
+	execute(client, message, args) {
 		if (!args[0]) return message.channel.send("Please specify an ID or username.");
 
 		let user = new User(args[0], client.gd);
-		await user.init();
 
 		message.channel.send(user.getEmbed());
 	}

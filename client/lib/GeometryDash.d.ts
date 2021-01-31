@@ -5,15 +5,20 @@ class GeometryDash {
 	public endpoint: string;
 	public getData(file: string, params: any): string;
 	public parse(data: string, splitter?: string): any;
-	public xorDecrypt(text: string, key: 26364): string;
+	public levelPassword(password: string): string;
 	public static Level: typeof Level;
 	public static ExtendedLevel: typeof ExtendedLevel;
 	public static User: typeof User;
 }
 
-type Results = {
+type LevelResults = {
 	embed: MessageEmbed;
-	page: number;
+	query: string;
+	ids: string[];
+}
+
+type UserResults = {
+	embed: MessageEmbed;
 	ids: string[];
 }
 
@@ -49,8 +54,8 @@ class Level {
 	public difficultyFace: string;
 	public static getDailyEmbed(gd: GeometryDash): MessageEmbed
 	public static getWeeklyEmbed(gd: GeometryDash): MessageEmbed
-	public static getSearchResults(query: string, gd: GeometryDash, page: number): Results;
-	public static getLevelsByUser(query: string, gd: GeometryDash, page: number): Results;
+	public static getSearchResults(query: string, gd: GeometryDash, page: number): LevelResults;
+	public static getLevelsByUser(query: string, gd: GeometryDash, page: number): UserResults;
 }
 
 class ExtendedLevel extends Level {
