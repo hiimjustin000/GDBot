@@ -109,6 +109,8 @@ class Level {
 	}
 
 	static async getSearchResults(query, gd, page = 0) {
+		if (typeof page == "string") page = parseInt(page);
+
 		let embed = new MessageEmbed({
 			title: `Search results: ${query}`,
 			description: `Page ${page + 1}`,
@@ -124,7 +126,10 @@ class Level {
 			type: 0,
 			page
 		});
-		if (!results || results == "-1") return;
+		if (!results || results == "-1") return {
+			embed: embed.addField("No results found", "No results found"),
+			page
+		}
 		results = results.split("#")[0].split("|", 10);
 
 		if (results.length == 1) return {
@@ -134,14 +139,16 @@ class Level {
 		let ids = [];
 		
 		for (let i = 0; i < 10; i++) {
-			let level = new Level(gd.parse(results[i])[1], gd);
-			await level.init();
-			embed.addField(`${level.name} by ${level.creatorName}`, `Downloads: ${level.downloads}\nLikes: ${level.likes}\nLength: ${level.length}\nSong: ${level.songObj.name} by ${level.songObj.author}`);
+			if (typeof results[i] != "undefined") {
+				let level = new Level(gd.parse(results[i])[1], gd);
+				await level.init();
+				embed.addField(`${level.name} by ${level.creatorName} (${level.id})`, `Downloads: ${level.downloads}\nLikes: ${level.likes}\nLength: ${level.length}\nSong: ${level.songObj.name} by ${level.songObj.author}`);
 
-			ids.push(level.id);
+				ids.push(level.id);
+			}
 		}
 
-		embed.addField(`Page ${page + 1}/1000`, "Use `select (number)` to select level");
+		embed.addField(`Page ${page + 1}`, "Use `select (number)` to select level");
 
 		return {
 			embed,
@@ -180,7 +187,7 @@ class Level {
 		for (let i = 0; i < results.length; i++) {
 			let level = new Level(gd.parse(results[i])[1], gd);
 			await level.init();
-			embed.addField(`${level.name}`, `Downloads: ${level.downloads}\nLikes: ${level.likes}\nLength: ${level.length}\nSong: ${level.songObj.name} by ${level.songObj.author}`);
+			embed.addField(`${level.name} (${level.id})`, `Downloads: ${level.downloads}\nLikes: ${level.likes}\nLength: ${level.length}\nSong: ${level.songObj.name} by ${level.songObj.author}`);
 
 			ids.push(level.id);
 		}
@@ -222,8 +229,7 @@ class Level {
 
 class ExtendedLevel extends Level {
 	constructor(id, gd) {
-		this.id = id;
-		this.gd = gd;
+		super(id, gd);
 	}
 
 	async init() {

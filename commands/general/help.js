@@ -9,26 +9,28 @@ module.exports = new GDCommand({
 	usage: "help [command]",
 	examples: ["help", "help ping"],
 	execute(client, message, args) {
-		if (Object.keys(client.commands).includes(args[0])) return message.channel.send(new MessageEmbed({
+		let commands = { ...client.commands.general, ...client.commands.gd };
+
+		if (Object.keys(commands).includes(args[0])) return message.channel.send(new MessageEmbed({
 			title: `GDBot help: \`${args[0]}\``,
-			description: client.commands[args[0]].description,
+			description: commands[args[0]].description,
 			color: client.randomColor(),
 			fields: [
 				{
 					name: "Alias(es)",
-					value: client.commands[args[0]].aliases ? client.commands[args[0]].aliases.join(", ") : "None"
+					value: commands[args[0]].aliases ? commands[args[0]].aliases.join(", ") : "None"
 				},
 				{
 					name: "Usage",
-					value: client.commands[args[0]].usage
+					value: commands[args[0]].usage
 				},
 				{
 					name: "Example(s)",
-					value: `\`${client.commands[args[0]].examples ? client.commands[args[0]].examples.join("`\n`") : "None"}\``
+					value: `\`${commands[args[0]].examples ? commands[args[0]].examples.join("`\n`") : "None"}\``
 				},
 				{
 					name: "Required permission(s)",
-					value: `${client.commands[args[0]].requiredPerms ? `\`${client.commands[args[0]].requiredPerms.join("`\n`")}\`` : "None"}`
+					value: `${commands[args[0]].requiredPerms ? `\`${commands[args[0]].requiredPerms.join("`\n`")}\`` : "None"}`
 				}
 			],
 			timestamp: new Date(),
