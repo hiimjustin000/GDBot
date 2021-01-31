@@ -6,9 +6,8 @@
   "author": "Justin Pridgen (BokuWaBoingo)",
   "license": "MIT",
   "dependencies": {
-    "@types/node": "^14.0.4",
-    "@types/node-fetch": "^2.5.7",
+    "@types/node": "^14.14.22",
     "discord.js": "^12.2.0",
-    "node-fetch": "^2.6.1"
+    "sync-fetch": "^0.3.0"
   }
 }

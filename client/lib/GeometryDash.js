@@ -1,5 +1,5 @@
 const { MessageEmbed } = require("discord.js");
-const { default: fetch } = require("node-fetch");
+const fetch = require("sync-fetch");
 const difficulties = require("../../db/difficulties.json");
 const songs = require("../../db/songs.json");
 const env = require("../../env");
@@ -47,18 +47,16 @@ class Level {
 	constructor(id, gd) {
 		this.id = id;
 		this.gd = gd;
-	}
 
-	async init() {
-		let levelData = await this.gd.getData("getGJLevels21", {
+		let levelData = gd.getData("getGJLevels21", {
 			str: this.id,
 			type: 0
 		});
 
-		let level = this.gd.parse(levelData.split("#")[0]);
+		let level = gd.parse(levelData.split("#")[0]);
 		let author = levelData.split("#")[1].split(":");
 		let song = `~${levelData.split("#")[2]}`;
-		song = this.gd.parse(song, "~|~");
+		song = gd.parse(song, "~|~");
 
 		this.name = level[2];
 		this.creatorName = author[1] || "-";
@@ -88,32 +86,29 @@ class Level {
 		this.gameVersion = level[13] > 17 ? (level[13] / 10).toFixed(1) : level[13] == 11 ? "1.8" : level[13] == 10 ? "1.7" : "<1.7";
 		if (level[30] != "0") this.original = level[30];
 		this.difficultyFace = this._getDifficultyFace(level);
-
-		return this;
 	}
 
-	static async getDailyEmbed(gd) {
-		let id = gd.parse(await gd.getData("downloadGJLevel22", {
+	static getDailyEmbed(gd) {
+		let id = gd.parse(gd.getData("downloadGJLevel22", {
 			levelID: -1
 		}))[1];
 
-		return (await new ExtendedLevel(id, gd).init()).getEmbed();
+		return new ExtendedLevel(id, gd).getEmbed();
 	}
 
-	static async getWeeklyEmbed(gd) {
-		let id = gd.parse(await gd.getData("downloadGJLevel22", {
+	static getWeeklyEmbed(gd) {
+		let id = gd.parse(gd.getData("downloadGJLevel22", {
 			levelID: -2
 		}))[1];
 
-		return (await new ExtendedLevel(id, gd).init()).getEmbed();
+		return new ExtendedLevel(id, gd).getEmbed();
 	}
 
-	static async getSearchResults(query, gd, page = 0) {
+	static getSearchResults(query, gd, page = 0) {
 		if (typeof page == "string") page = parseInt(page);
 
 		let embed = new MessageEmbed({
 			title: `Search results: ${query}`,
-			description: `Page ${page + 1}`,
 			color: Math.floor(Math.random() * (0xFFFFFF + 1)),
 			timestamp: new Date(),
 			footer: {
@@ -121,19 +116,18 @@ class Level {
 			}
 		});
 
-		let results = await gd.getData("getGJLevels21", {
+		let results = gd.getData("getGJLevels21", {
 			str: query,
 			type: 0,
 			page
 		});
 		if (!results || results == "-1") return {
-			embed: embed.addField("No results found", "No results found"),
-			page
+			embed: embed.setDescription("No results found")
 		}
 		results = results.split("#")[0].split("|", 10);
 
 		if (results.length == 1) return {
-			embed: (await new ExtendedLevel(gd.parse(results[0])[1], gd).init()).getEmbed(),
+			embed: new ExtendedLevel(gd.parse(results[0])[1], gd).getEmbed(),
 		}
 		
 		let ids = [];
@@ -141,7 +135,6 @@ class Level {
 		for (let i = 0; i < 10; i++) {
 			if (typeof results[i] != "undefined") {
 				let level = new Level(gd.parse(results[i])[1], gd);
-				await level.init();
 				embed.addField(`${level.name} by ${level.creatorName} (${level.id})`, `Downloads: ${level.downloads}\nLikes: ${level.likes}\nLength: ${level.length}\nSong: ${level.songObj.name} by ${level.songObj.author}`);
 
 				ids.push(level.id);
@@ -152,18 +145,16 @@ class Level {
 
 		return {
 			embed,
-			page,
+			query,
 			ids
 		}
 	}
 
-	static async getLevelsByUser(query, gd, page = 0) {
+	static getLevelsByUser(query, gd, page = 0) {
 		let user = new User(query, gd);
-		await user.init();
 
 		let embed = new MessageEmbed({
 			title: `Levels by: ${user.username}`,
-			description: `Page ${page + 1}`,
 			color: Math.floor(Math.random() * (0xFFFFFF + 1)),
 			timestamp: new Date(),
 			footer: {
@@ -171,14 +162,13 @@ class Level {
 			}
 		});
 
-		let results = await gd.getData("getGJLevels21", {
+		let results = gd.getData("getGJLevels21", {
 			str: user.id,
 			type: 5,
 			page
 		});
 		if (!results || results == "-1") return {
-			embed: embed.addField("No results found", "No results found"),
-			page
+			embed: embed.setDescription("No results found")
 		}
 		results = results.split("#")[0].split("|");
 
@@ -186,7 +176,6 @@ class Level {
 		
 		for (let i = 0; i < results.length; i++) {
 			let level = new Level(gd.parse(results[i])[1], gd);
-			await level.init();
 			embed.addField(`${level.name} (${level.id})`, `Downloads: ${level.downloads}\nLikes: ${level.likes}\nLength: ${level.length}\nSong: ${level.songObj.name} by ${level.songObj.author}`);
 
 			ids.push(level.id);
@@ -230,22 +219,16 @@ class Level {
 class ExtendedLevel extends Level {
 	constructor(id, gd) {
 		super(id, gd);
-	}
 
-	async init() {
-		await super.init();
-
-		let fullData = this.gd.parse(await this.gd.getData("downloadGJLevel22", {
+		let fullData = gd.parse(gd.getData("downloadGJLevel22", {
 			levelID: this.id
 		}));
 
 		this.password = "No copy";
-		this.password = fullData[27] == "Aw==" ? "Free copy" : this.gd.xorDecrypt(fullData[27], 26364).slice(1);
+		this.password = fullData[27] == "Aw==" ? "Free copy" : gd.xorDecrypt(fullData[27], 26364).slice(1);
 		this.password = fullData[27] == "0" ? "No copy" : this.password;
 		this.uploaded = `${fullData[28]} ago`;
 		this.updated = `${fullData[29]} ago`;
-
-		return this;
 	}
 
 	getEmbed() {
@@ -315,13 +298,11 @@ class User {
 	constructor(query, gd) {
 		this.query = query;
 		this.gd = gd;
-	}
 
-	async init() {
-		let userData = this.gd.parse(await this.gd.getData("getGJUsers20", {
+		let userData = gd.parse(gd.getData("getGJUsers20", {
 			str: this.query
 		}));
-		userData = this.gd.parse(await this.gd.getData("getGJUserInfo20", {
+		userData = gd.parse(gd.getData("getGJUserInfo20", {
 			targetAccountID: userData[16]
 		}));
 
@@ -348,8 +329,6 @@ class User {
 		this.messages = profileSettings.messages[userData[18]];
 		this.friendRequests = profileSettings.friendRequests[userData[19]];
 		this.commentHistory = profileSettings.commentHistory[userData[50]];
-
-		return this;
 	}
 
 	getEmbed() {
@@ -395,13 +374,16 @@ class GeometryDash {
 	static ExtendedLevel = ExtendedLevel;
 	static User = User;
 
-	async getData(file, params) {
-		let response = await fetch(`http://${this.endpoint}/${file}.php`, {
+	getData(file, params) {
+		return fetch(`http://${this.endpoint}/${file}.php`, {
 			method: "POST",
-			body: new URLSearchParams({ ...params, secret: "Wmfd2893gb7", gameVersion: "21", binaryVersion: "35" })
-		}).then(res => res.text());
-
-		return response;
+			form: new URLSearchParams({
+				...params,
+				secret: "Wmfd2893gb7",
+				gameVersion: "21",
+				binaryVersion: "35"
+			})
+		}).text();
 	}
 
 	parse(data, splitter = ":") {

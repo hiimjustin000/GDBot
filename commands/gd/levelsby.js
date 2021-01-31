@@ -9,17 +9,16 @@ module.exports = new GDCommand({
 	async execute(client, message, args) {
 		if (!args[0]) return message.channel.send("Please specify a username or player ID.");
 
-		let results = await Level.getLevelsByUser(args.join(" "), client.gd);
+		let results = Level.getLevelsByUser(args.join(" "), client.gd);
 
 		message.channel.send(results.embed).then(msg => {
-			msg.react("◀").then(() => msg.react("▶"));
-
 			let collector = msg.channel.createMessageCollector(m => !isNaN(m.content.split(" ")[1]) && m.content.startsWith("select "), { time: 30000 });
 			
 			collector.on("collect", async m => {
-				if (m.author != message.author) return;
+				if (m.author != msg.author) return;
+				if (m.content.startsWith("select ")) return m.channel.send(new ExtendedLevel(results.ids[m.content.split(" ")[1] - 1], client.gd).getEmbed());
 
-				m.channel.send((await new ExtendedLevel(results.ids[m.content.split(" ")[1] - 1], client.gd).init()).getEmbed());
+				msg.edit(Level.getSearchResults(results.query, client.gd, m.content.split(" ")[1]).embed);
 			});
 		});
 	}

@@ -8,6 +8,6 @@ module.exports = new GDCommand({
 	usage: "weekly",
 	examples: ["weekly"],
 	async execute(client, message) {
-		message.channel.send(await Level.getWeeklyEmbed(client.gd));
+		message.channel.send(Level.getWeeklyEmbed(client.gd));
 	}
 });

@@ -3,7 +3,7 @@ import { MessageEmbed } from "discord.js";
 class GeometryDash {
 	public constructor(endpoint: string);
 	public endpoint: string;
-	public async getData(file: string, params: any): Promise<string>;
+	public getData(file: string, params: any): string;
 	public parse(data: string, splitter?: string): any;
 	public xorDecrypt(text: string, key: 26364): string;
 	public static Level: typeof Level;
@@ -30,7 +30,7 @@ type Social = {
 }
 
 class Level {
-	public constructor(id: string, gd: GeometryDash): Promise<Level>;
+	public constructor(id: string, gd: GeometryDash);
 	public id: string;
 	public gd: GeometryDash;
 	public name: string;
@@ -47,15 +47,14 @@ class Level {
 	public gameVersion: string;
 	public original?: string;
 	public difficultyFace: string;
-	public async init(): Promise<Level>;
-	public static async getDailyEmbed(gd: GeometryDash): Promise<MessageEmbed>
-	public static async getWeeklyEmbed(gd: GeometryDash): Promise<MessageEmbed>
-	public static async getSearchResults(query: string, gd: GeometryDash, page: number): Promise<Results>;
-	public static async getLevelsByUser(query: string, gd: GeometryDash, page: number): Promise<Results>;
+	public static getDailyEmbed(gd: GeometryDash): MessageEmbed
+	public static getWeeklyEmbed(gd: GeometryDash): MessageEmbed
+	public static getSearchResults(query: string, gd: GeometryDash, page: number): Results;
+	public static getLevelsByUser(query: string, gd: GeometryDash, page: number): Results;
 }
 
 class ExtendedLevel extends Level {
-	public constructor(id: string, gd: GeometryDash): Promise<ExtendedLevel>
+	public constructor(id: string, gd: GeometryDash);
 	public password: string;
 	public uploaded: string;
 	public updated: string;
@@ -81,7 +80,6 @@ class User {
 	public messages: string;
 	public friendRequests: string;
 	public commentHistory: string;
-	public async init(): Promise<User>;
 	public getEmbed(): MessageEmbed;
 }
 
